@@ -8,15 +8,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputBox = document.getElementById('inputBox');
     const clearInputBtn = document.getElementById('clearInputBtn');
     const abortBtn = document.getElementById('abortBtn');
-    const apiUrlInput = document.getElementById('apiUrl');
-    const apiTypeSelect = document.getElementById('apiType');
-    const modelSelectInput = document.getElementById('modelSelect');
-    const temperatureInput = document.getElementById('temperature');
-    const maxTokensInput = document.getElementById('maxTokens');
-    const showDebugCheckbox = document.getElementById('showDebug');
+    const apiUrlInput = document.getElementById('modalApiUrl');
+    const apiTypeSelect = document.getElementById('modalApiType');
+    const modelSelectInput = document.getElementById('modalModelSelect');
+    const systemPromptInput = document.getElementById('modalSystemPrompt');
+    const showDebugCheckbox = document.getElementById('modalShowDebug');
     const showThinkingCheckbox = document.getElementById('modalShowThinking');
-    const wsUrlInput = document.getElementById('wsUrl');
-    const audioSampleRateSelect = document.getElementById('audioSampleRate');
+    const wsUrlInput = document.getElementById('modalWsUrl');
+    const audioSampleRateSelect = document.getElementById('modalAudioSampleRate');
     
     // 配置
     const config = {
@@ -396,10 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (apiUrlInput) apiUrlInput.value = chatModelConfig.apiUrl;
                 if (apiTypeSelect) apiTypeSelect.value = chatModelConfig.apiType;
                 if (modelSelectInput) modelSelectInput.value = chatModelConfig.model;
-                if (temperatureInput) temperatureInput.value = chatModelConfig.temperature;
-                const tempValue = document.getElementById('temperatureValue');
-                if (tempValue) tempValue.textContent = chatModelConfig.temperature;
-                if (maxTokensInput) maxTokensInput.value = chatModelConfig.maxTokens;
+                if (systemPromptInput) systemPromptInput.value = chatModelConfig.systemPrompt;
                 if (showDebugCheckbox) showDebugCheckbox.checked = chatModelConfig.showDebug;
                 if (showThinkingCheckbox) showThinkingCheckbox.checked = chatModelConfig.showThinking;
             } catch (error) {
@@ -425,8 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (apiUrlInput) chatModelConfig.apiUrl = apiUrlInput.value;
         if (apiTypeSelect) chatModelConfig.apiType = apiTypeSelect.value;
         if (modelSelectInput) chatModelConfig.model = modelSelectInput.value;
-        if (temperatureInput) chatModelConfig.temperature = parseFloat(temperatureInput.value);
-        if (maxTokensInput) chatModelConfig.maxTokens = parseInt(maxTokensInput.value);
+        if (systemPromptInput) chatModelConfig.systemPrompt = systemPromptInput.value;
         chatModelConfig.autoSend = true; // 固定为自动发送
         if (showDebugCheckbox) chatModelConfig.showDebug = showDebugCheckbox.checked;
         if (showThinkingCheckbox) chatModelConfig.showThinking = showThinkingCheckbox.checked;
@@ -441,8 +436,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // 保存音频设置
         if (audioSampleRateSelect) {
             chatModelConfig.audioSampleRate = parseInt(audioSampleRateSelect.value);
-            // 更新配置
-            config.sampleRate = parseInt(audioSampleRateSelect.value);
+            // 注意：config.sampleRate 始终保持16000，用于语音识别服务
+            // 用户选择的采样率仅用于麦克风录制，然后重采样到16kHz
         }
         
         // 保存到localStorage - 使用与HTML一致的键名
@@ -451,8 +446,6 @@ document.addEventListener('DOMContentLoaded', () => {
             apiType: chatModelConfig.apiType,
             model: chatModelConfig.model,
             systemPrompt: chatModelConfig.systemPrompt,
-            temperature: chatModelConfig.temperature,
-            maxTokens: chatModelConfig.maxTokens,
             showDebug: chatModelConfig.showDebug,
             showThinking: chatModelConfig.showThinking,
             wsUrl: config.serverUrl,
@@ -467,8 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (apiUrlInput) apiUrlInput.addEventListener('change', saveSettings);
     if (apiTypeSelect) apiTypeSelect.addEventListener('change', saveSettings);
     if (modelSelectInput) modelSelectInput.addEventListener('change', saveSettings);
-    if (temperatureInput) temperatureInput.addEventListener('change', saveSettings);
-    if (maxTokensInput) maxTokensInput.addEventListener('change', saveSettings);
+    if (systemPromptInput) systemPromptInput.addEventListener('change', saveSettings);
     if (showDebugCheckbox) {
         showDebugCheckbox.addEventListener('change', function() {
             saveSettings();
@@ -527,7 +519,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }, config.websocketTimeout);
             
             websocket = new WebSocket(config.serverUrl, ["binary"]);
-            console.log('正在连接WebSocket:', config.serverUrl);
+            console.log('🔗 正在连接WebSocket:', config.serverUrl);
+            console.log('🔧 当前配置:', {
+                serverUrl: config.serverUrl,
+                sampleRate: config.sampleRate,
+                segDuration: config.segDuration,
+                segOverlap: config.segOverlap
+            });
             
             websocket.onopen = () => {
                 clearTimeout(connectionTimeout);
@@ -588,20 +586,25 @@ document.addEventListener('DOMContentLoaded', () => {
             websocket.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
+                    console.log('📨 收到WebSocket消息:', message);
                     if (message.text) {
                         if (message.is_final) {
                             const recognizedText = message.text;
+                            console.log('🎯 最终识别结果:', recognizedText);
                             addMessage(recognizedText, 'user');
                             // 语音识别完成后发送到聊天模型
                             sendToChatModelDirectly(recognizedText);
                             updateStatus(`识别完成，用时：${(message.time_complete - message.time_submit).toFixed(2)}秒`, false);
                         } else {
+                            console.log('🔄 中间识别结果:', message.text);
                             // 可以添加实时显示中间结果的逻辑
                             updateStatus('正在识别...', false);
                         }
+                    } else {
+                        console.log('📨 收到非文本消息:', message);
                     }
                 } catch (error) {
-                    console.error('解析消息失败:', error);
+                    console.error('❌ 解析消息失败:', error, 'Raw data:', event.data);
                 }
             };
         });
@@ -630,8 +633,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 } 
             });
             
-            // 获取用户选择的采样率或使用默认值
-            const selectedSampleRate = audioSampleRateSelect ? parseInt(audioSampleRateSelect.value) : config.sampleRate;
+            // 获取用户选择的麦克风采样率或使用默认值
+            const selectedSampleRate = audioSampleRateSelect ? parseInt(audioSampleRateSelect.value) : 44100;
+            
+            // 语音识别服务固定使用16kHz，这是最佳识别效果的采样率
+            const targetSampleRate = 16000;
+            
+            console.log('🎙️ 音频录制配置:', {
+                selectedSampleRate: selectedSampleRate,
+                targetSampleRate: targetSampleRate,
+                configSampleRate: config.sampleRate,
+                audioSampleRateSelectValue: audioSampleRateSelect ? audioSampleRateSelect.value : 'null',
+                audioSampleRateSelectElement: audioSampleRateSelect ? 'exists' : 'null'
+            });
             
             // 创建音频上下文
             audioContext = new (window.AudioContext || window.webkitAudioContext)({
@@ -639,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             // 记录实际采样率（可能与请求的不同）
-            console.log(`音频上下文创建成功，采样率: ${audioContext.sampleRate} Hz`);
+            console.log(`🎵 音频上下文创建成功，采样率: ${audioContext.sampleRate} Hz`);
             
             sourceNode = audioContext.createMediaStreamSource(audioStream);
             
@@ -660,8 +674,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const combinedData = combineAudioChunks(audioChunks);
                     audioChunks = [];
                     
-                    // 重采样到16kHz
-                    const resampledData = resampleAudio(combinedData, audioContext.sampleRate, config.sampleRate);
+                    // 重采样到16kHz（语音识别最佳采样率）
+                    const resampledData = resampleAudio(combinedData, audioContext.sampleRate, targetSampleRate);
                     
                     // 发送音频数据
                     sendAudioData(resampledData);
@@ -824,6 +838,12 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             // 发送消息
+            console.log('📤 发送音频数据:', {
+                task_id: taskId,
+                dataSize: audioData.length,
+                base64Size: base64.length,
+                sampleRate: 16000  // 固定16kHz发送给语音识别服务
+            });
             websocket.send(JSON.stringify(message));
         } catch (error) {
             console.error('发送音频数据失败:', error);
@@ -1470,10 +1490,31 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('使用默认WebSocket地址:', defaultWsUrl);
         }
         
-        console.log('初始化完成 - 最终配置:', {
+        console.log('🚀 初始化完成 - 最终配置:', {
             'API地址': chatModelConfig.apiUrl,
-            'WebSocket地址': config.serverUrl
+            'WebSocket地址': config.serverUrl,
+            '采样率': config.sampleRate,
+            '分段长度': config.segDuration,
+            '分段重叠': config.segOverlap,
+            '系统提示词': chatModelConfig.systemPrompt ? chatModelConfig.systemPrompt.substring(0, 50) + '...' : 'null'
         });
+        
+        // 添加一个全局函数用于调试
+        window.debugVoiceConfig = function() {
+            console.log('🔧 当前语音识别配置:', {
+                config,
+                chatModelConfig,
+                wsUrlInput: wsUrlInput ? wsUrlInput.value : 'null',
+                audioSampleRateSelect: audioSampleRateSelect ? audioSampleRateSelect.value : 'null',
+                isRecording,
+                websocketState: websocket ? websocket.readyState : 'null'
+            });
+            return {
+                config,
+                chatModelConfig,
+                websocketConnected: websocket && websocket.readyState === WebSocket.OPEN
+            };
+        };
         
         // 设置输入框的值
         if (apiUrlInput) {
