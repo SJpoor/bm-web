@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const temperatureInput = document.getElementById('temperature');
     const maxTokensInput = document.getElementById('maxTokens');
     const showDebugCheckbox = document.getElementById('showDebug');
+    const showThinkingCheckbox = document.getElementById('modalShowThinking');
     const wsUrlInput = document.getElementById('wsUrl');
     const audioSampleRateSelect = document.getElementById('audioSampleRate');
     
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         maxTokens: 2000,
         autoSend: true, // 固定为自动发送
         showDebug: false, // 添加调试信息显示设置
+        showThinking: false, // 是否显示思考内容，默认隐藏
         mode: 'cors', // 添加CORS模式
         systemPrompt: "必须使用中文思考和回答，严格按照关键字进行检索并于知识库内容匹配，只能回答知识库中文档的内容，不是知识库的内容或者没用找到答案不回答", // 系统提示词
         // 检索参数固定配置（不可通过设置修改）
@@ -123,13 +125,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 remainingContent = remainingContent.substring(7); // 移除<think>
                 processedLength += 7;
                 
-                // 创建think容器（如果还没有正在进行的think）
+                // 创建think容器或标记think状态
                 let currentThinkDiv = aiContentDiv.querySelector('.think-content:last-child[data-streaming="true"]');
                 if (!currentThinkDiv) {
-                    currentThinkDiv = document.createElement('div');
-                    currentThinkDiv.className = 'think-content';
-                    currentThinkDiv.setAttribute('data-streaming', 'true');
-                    aiContentDiv.appendChild(currentThinkDiv);
+                    if (chatModelConfig.showThinking) {
+                        // 显示思考内容时创建可见容器
+                        currentThinkDiv = document.createElement('div');
+                        currentThinkDiv.className = 'think-content';
+                        currentThinkDiv.setAttribute('data-streaming', 'true');
+                        aiContentDiv.appendChild(currentThinkDiv);
+                    } else {
+                        // 隐藏思考内容时创建隐藏标记
+                        currentThinkDiv = document.createElement('div');
+                        currentThinkDiv.className = 'think-content';
+                        currentThinkDiv.setAttribute('data-streaming', 'true');
+                        currentThinkDiv.style.display = 'none'; // 隐藏
+                        aiContentDiv.appendChild(currentThinkDiv);
+                    }
+                }
+                
+                // 更新思考状态为"思考中"
+                const thinkingStatusDiv = aiContentDiv.querySelector('.thinking-status:not(.thinking-completed)');
+                if (thinkingStatusDiv) {
+                    thinkingStatusDiv.className = 'thinking-status';
+                    thinkingStatusDiv.innerHTML = `
+                        思考中
+                        <div class="thinking-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    `;
                 }
                 continue;
             }
@@ -145,6 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const currentThinkDiv = aiContentDiv.querySelector('.think-content:last-child[data-streaming="true"]');
                 if (currentThinkDiv) {
                     currentThinkDiv.removeAttribute('data-streaming');
+                }
+                
+                // think结束，更新思考状态为"已思考"
+                const thinkingStatusDiv = aiContentDiv.querySelector('.thinking-status:not(.thinking-completed)');
+                if (thinkingStatusDiv) {
+                    thinkingStatusDiv.className = 'thinking-status thinking-completed';
+                    thinkingStatusDiv.innerHTML = '已思考';
                 }
                 continue;
             }
@@ -162,8 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 如果没有更多标签，检查是否在think中
                 const currentThinkDiv = aiContentDiv.querySelector('.think-content:last-child[data-streaming="true"]');
                 if (currentThinkDiv) {
-                    // 在think标签内，暂时保留内容等待更多数据或结束标签
-                    break;
+                    // 在think标签内，也要显示当前内容，实现流式效果
+                    contentToAdd = remainingContent;
+                    remainingContent = '';
+                    processedLength += contentToAdd.length;
                 } else {
                     // 不在think标签内，处理剩余内容
                     contentToAdd = remainingContent;
@@ -174,15 +209,50 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 添加内容到适当的容器
             if (contentToAdd) {
+                // 检查是否在think标签内（无论是否显示思考内容）
                 const currentThinkDiv = aiContentDiv.querySelector('.think-content:last-child[data-streaming="true"]');
-                if (currentThinkDiv) {
-                    // 如果在think标签内，添加到think容器（保持简单文本格式）
-                    const formattedContent = contentToAdd.replace(/\n/g, '<br>');
-                    currentThinkDiv.innerHTML += formattedContent;
+                const isInThinkContent = currentThinkDiv !== null;
+                
+                if (isInThinkContent) {
+                    // 在think标签内
+                    if (chatModelConfig.showThinking) {
+                        // 设置为显示思考内容，添加到think容器
+                        const formattedContent = contentToAdd.replace(/\n/g, '<br>');
+                        currentThinkDiv.innerHTML += formattedContent;
+                        
+                        // 调试信息：think内容流式添加
+                        console.log('Think内容流式添加:', contentToAdd);
+                    } else {
+                        // 设置为隐藏思考内容，跳过不显示
+                        console.log('Think内容已隐藏:', contentToAdd);
+                    }
+                    
+                    // 无论是否显示，都保持思考状态
+                    const thinkingStatusDiv = aiContentDiv.querySelector('.thinking-status:not(.thinking-completed)');
+                    if (thinkingStatusDiv && contentToAdd.trim()) {
+                        thinkingStatusDiv.innerHTML = `
+                            思考中
+                            <div class="thinking-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                        `;
+                    }
                 } else {
-                    // 如果在think标签外，添加为普通内容
+                    // 在think标签外，添加为普通内容
                     const markdownHtml = parseMarkdown(contentToAdd);
                     aiContentDiv.innerHTML += markdownHtml;
+                    
+                    // 调试信息：普通内容流式添加
+                    console.log('普通内容流式添加:', contentToAdd);
+                    
+                    // 如果有非think内容且思考状态还未完成，更新为"已思考"
+                    const thinkingStatusDiv = aiContentDiv.querySelector('.thinking-status:not(.thinking-completed)');
+                    if (thinkingStatusDiv) {
+                        thinkingStatusDiv.className = 'thinking-status thinking-completed';
+                        thinkingStatusDiv.innerHTML = '已思考';
+                    }
                 }
             }
         }
@@ -212,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (role === 'user') {
             metaDiv.innerHTML = `用户`;
         } else if (role === 'ai') {
-            metaDiv.innerHTML = `知识库`;
+            metaDiv.innerHTML = ``;
         } else if (role === 'system') {
             metaDiv.innerHTML = `系统`;
         } else if (role === 'error') {
@@ -303,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatModelConfig.maxTotalTokens = settings.maxTotalTokens || chatModelConfig.maxTotalTokens;
                 chatModelConfig.enableRerank = settings.enableRerank !== undefined ? settings.enableRerank : chatModelConfig.enableRerank;
                 chatModelConfig.showDebug = settings.showDebug !== undefined ? settings.showDebug : chatModelConfig.showDebug;
+                chatModelConfig.showThinking = settings.showThinking !== undefined ? settings.showThinking : chatModelConfig.showThinking;
                 
                 // 加载WebSocket地址设置
                 if (settings.wsUrl) {
@@ -330,6 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tempValue) tempValue.textContent = chatModelConfig.temperature;
                 if (maxTokensInput) maxTokensInput.value = chatModelConfig.maxTokens;
                 if (showDebugCheckbox) showDebugCheckbox.checked = chatModelConfig.showDebug;
+                if (showThinkingCheckbox) showThinkingCheckbox.checked = chatModelConfig.showThinking;
             } catch (error) {
                 console.error('加载设置失败:', error);
             }
@@ -357,6 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (maxTokensInput) chatModelConfig.maxTokens = parseInt(maxTokensInput.value);
         chatModelConfig.autoSend = true; // 固定为自动发送
         if (showDebugCheckbox) chatModelConfig.showDebug = showDebugCheckbox.checked;
+        if (showThinkingCheckbox) chatModelConfig.showThinking = showThinkingCheckbox.checked;
         
         // 保存WebSocket地址设置
         if (wsUrlInput) {
@@ -381,6 +454,7 @@ document.addEventListener('DOMContentLoaded', () => {
             temperature: chatModelConfig.temperature,
             maxTokens: chatModelConfig.maxTokens,
             showDebug: chatModelConfig.showDebug,
+            showThinking: chatModelConfig.showThinking,
             wsUrl: config.serverUrl,
             audioSampleRate: config.sampleRate
         };
@@ -397,6 +471,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (maxTokensInput) maxTokensInput.addEventListener('change', saveSettings);
     if (showDebugCheckbox) {
         showDebugCheckbox.addEventListener('change', function() {
+            saveSettings();
+        });
+    }
+    if (showThinkingCheckbox) {
+        showThinkingCheckbox.addEventListener('change', function() {
             saveSettings();
         });
     }
@@ -893,11 +972,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const aiContentDiv = aiMessageDiv ? aiMessageDiv.querySelector('.message-content') : null;
             if (aiContentDiv) aiContentDiv.innerHTML = ''; // Clear initial content
 
+            // 添加思考状态指示器
+            const thinkingStatusDiv = document.createElement('div');
+            thinkingStatusDiv.className = 'thinking-status';
+            thinkingStatusDiv.innerHTML = `
+                思考中
+                <div class="thinking-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            if (aiContentDiv) aiContentDiv.appendChild(thinkingStatusDiv);
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let partialResponse = '';
+            let hasStartedStreaming = false;
             
-            updateStatus('AI正在回复...', false);
+            updateStatus('AI正在思考...', false);
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -952,6 +1045,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (chunk && aiContentDiv) {
                             // 调试：打印chunk内容
                             console.log('收到chunk:', chunk);
+                            
+                            // 第一次收到内容时，更新状态为正在回复
+                            if (!hasStartedStreaming) {
+                                hasStartedStreaming = true;
+                                updateStatus('AI正在回复...', false);
+                            }
                             
                             // 使用新的think标签处理和Markdown解析
                             processThinkContent(chunk, aiContentDiv);
@@ -1102,11 +1201,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const aiContentDiv = aiMessageDiv ? aiMessageDiv.querySelector('.message-content') : null;
             if (aiContentDiv) aiContentDiv.innerHTML = ''; // Clear initial content
 
+            // 添加思考状态指示器
+            const thinkingStatusDiv = document.createElement('div');
+            thinkingStatusDiv.className = 'thinking-status';
+            thinkingStatusDiv.innerHTML = `
+                思考中
+                <div class="thinking-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            if (aiContentDiv) aiContentDiv.appendChild(thinkingStatusDiv);
+
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let partialResponse = '';
+            let hasStartedStreaming = false;
             
-            updateStatus('AI正在回复...', false);
+            updateStatus('AI正在思考...', false);
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -1161,6 +1274,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (chunk && aiContentDiv) {
                             // 调试：打印chunk内容
                             console.log('收到chunk:', chunk);
+                            
+                            // 第一次收到内容时，更新状态为正在回复
+                            if (!hasStartedStreaming) {
+                                hasStartedStreaming = true;
+                                updateStatus('AI正在回复...', false);
+                            }
                             
                             // 使用新的think标签处理和Markdown解析
                             processThinkContent(chunk, aiContentDiv);

@@ -50,6 +50,7 @@
 
         body {
             font-family: 'Microsoft YaHei', 'PingFang SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
             color: var(--text-color);
             background: url(./img/SketchPngabbdb7def0e961481f312c7ac83f13fb0a80aea87f9a553bac885259883976a4.png) no-repeat center center;
             background-size: cover;
@@ -294,7 +295,7 @@
             align-items: center;
             gap: 8px;
             margin-bottom: 8px;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             font-weight: 600;
             opacity: 0.9;
         }
@@ -302,11 +303,12 @@
         .message-content {
             line-height: 1.6;
             word-wrap: break-word;
+            font-size: 1.1em;
         }
         
         /* Think内容样式 */
         .think-content {
-            font-size: 0.8em;
+            font-size: 1em;
             color: #6b7280;
             margin: 8px 0;
             padding: 8px 12px;
@@ -315,6 +317,52 @@
             border-left: 3px solid #d1d5db;
             font-style: italic;
             line-height: 1.4;
+        }
+        
+        /* 思考状态指示器 */
+        .thinking-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.95em;
+            color: #6b7280;
+            margin: 8px 0;
+            padding: 6px 10px;
+            background-color: rgba(99, 102, 241, 0.1);
+            border-radius: 6px;
+            border-left: 3px solid #6366f1;
+        }
+        
+        .thinking-dots {
+            display: inline-flex;
+            gap: 2px;
+        }
+        
+        .thinking-dots span {
+            width: 4px;
+            height: 4px;
+            background-color: #6366f1;
+            border-radius: 50%;
+            animation: thinking-pulse 1.5s infinite;
+        }
+        
+        .thinking-dots span:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+        
+        .thinking-dots span:nth-child(3) {
+            animation-delay: 1s;
+        }
+        
+        @keyframes thinking-pulse {
+            0%, 80%, 100% { opacity: 0.3; }
+            40% { opacity: 1; }
+        }
+        
+        .thinking-completed {
+            color: #10b981;
+            background-color: rgba(16, 185, 129, 0.1);
+            border-left-color: #10b981;
         }
         
         /* 流式显示的think内容添加光标动画 */
@@ -1109,6 +1157,115 @@
             background: rgba(0, 0, 0, 0.05);
             border-color: var(--text-light);
         }
+
+        /* 美化的切换开关样式 */
+        .toggle-switch-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .toggle-switch-label {
+            font-size: 0.95rem;
+            color: var(--text-color);
+            font-weight: 500;
+            margin: 0;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .toggle-switch-checkbox {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+
+        .toggle-switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #e2e8f0;
+            border-radius: 28px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .toggle-switch-button {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 2px;
+            bottom: 2px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-switch-checkbox:checked + .toggle-switch-slider {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #4f46e5 100%);
+            border-color: var(--primary-color);
+        }
+
+        .toggle-switch-checkbox:checked + .toggle-switch-slider .toggle-switch-button {
+            transform: translateX(24px);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .toggle-switch-slider:hover {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .toggle-switch-checkbox:focus + .toggle-switch-slider {
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        /* 切换开关状态指示 */
+        .toggle-switch-checkbox:checked + .toggle-switch-slider::before {
+            content: "✓";
+            position: absolute;
+            left: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .toggle-switch-slider::after {
+            content: "×";
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 12px;
+            font-weight: bold;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .toggle-switch-checkbox:checked + .toggle-switch-slider::after {
+            opacity: 0;
+        }
+
+        .toggle-switch-slider::before {
+            opacity: 0;
+        }
     </style>
   </head>
   <body>
@@ -1133,7 +1290,7 @@
         
         <div class="main-content">
             <div class="chat-header">
-                <div class="chat-title">bmj知识库</div>
+                <div class="chat-title">JYBM业务办理指南</div>
                 <div class="chat-actions">
                     <div class="status-indicator" id="status">
                         准备就绪
@@ -1470,6 +1627,21 @@
                 
 
                  
+                <div class="setting-group">
+                    <h3>界面设置</h3>
+                    <div class="setting-item">
+                        <div class="toggle-switch-item">
+                            <label for="modalShowThinking" class="toggle-switch-label">显示思考内容</label>
+                            <div class="toggle-switch">
+                                <input type="checkbox" id="modalShowThinking" class="toggle-switch-checkbox">
+                                <label for="modalShowThinking" class="toggle-switch-slider">
+                                    <span class="toggle-switch-button"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="setting-group" style="display: none;">
                      <h3>调试设置</h3>
                     <div class="setting-item">
