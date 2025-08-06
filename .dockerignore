@@ -1,11 +1,21 @@
 # 大型归档文件
 bmj.tar
 
+# 忽略 Git 历史
+.git
+.gitignore
+
 # Windows可执行文件
 *.exe
 start_client.exe
 start_server.exe
 ffmpeg.exe
+
+# 忽略tar文件
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
 
 # 构建和缓存目录
 build/

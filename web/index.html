@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能语音助手 - 思源大模型</title>
+    <title>智能语音助手</title>
+    
+    <!-- 禁用 favicon 请求，避免在离线环境下出现 404 错误 -->
+    <link rel="icon" href="data:,">
+    
+    <!-- 离线优化 meta 标签 -->
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Cache-Control" content="max-age=31536000">
+    
     <script src="./flexible.js"></script>
     <link rel="stylesheet" type="text/css" href="./common.css" />
     <style>
@@ -1125,7 +1133,7 @@
         
         <div class="main-content">
             <div class="chat-header">
-                <div class="chat-title">智能语音助手</div>
+                <div class="chat-title">bmj知识库</div>
                 <div class="chat-actions">
                     <div class="status-indicator" id="status">
                         准备就绪
@@ -1142,7 +1150,6 @@
                     <div class="message-content">
                         🎙️ 点击录音按钮开始语音输入<br>
                         ⌨️ 或直接在下方输入框输入文字<br>
-                        ⚙️ 可在左侧设置面板配置语音识别和聊天模型参数
                   </div>
                         </div>
                         </div>
@@ -1421,7 +1428,7 @@
                 <h2>设置</h2>
                 <button class="modal-close" id="closeModal" onclick="closeSettingsModal()">×</button>
                     </div>
-            <div class="modal-body">
+                <div class="modal-body">
                 <div class="setting-group">
                     <h3>聊天模型设置</h3>
                                         <div class="setting-item">
@@ -1463,15 +1470,15 @@
                 
 
                  
-                 <div class="setting-group">
+                <div class="setting-group" style="display: none;">
                      <h3>调试设置</h3>
-                     <div class="setting-item">
-                         <div class="checkbox-item">
+                    <div class="setting-item">
+                        <div class="checkbox-item">
                              <input type="checkbox" id="modalShowDebug">
                              <label for="modalShowDebug">显示调试信息</label>
-                  </div>
+                        </div>
                     </div>
-                    </div>
+                </div>
                 
                     </div>
             <div class="modal-footer">
