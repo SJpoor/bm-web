@@ -1,0 +1,12 @@
+# 忽略tar文件
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+
+# 忽略model文件夹
+model/
+models/
+
+# 可能的其他相关文件
+*.tgz

@@ -1,0 +1,44 @@
+# 大型归档文件
+bmj.tar
+
+# Windows可执行文件
+*.exe
+start_client.exe
+start_server.exe
+ffmpeg.exe
+
+# 构建和缓存目录
+build/
+dist/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# 临时文件
+*.log
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# 开发和文档文件
+.git/
+.github/
+.gitignore
+.vscode/
+*.md
+!README.md
+
+# 其他不需要的目录
+2025/
+
+# 确保不排除SSL证书文件
+!cert.pem
+!key.pem
+
+# 避免重复复制模型文件
+# 如果您在Dockerfile中先复制merged_instruct_gguf目录，然后又使用COPY . .
+# 请取消下面的注释来避免重复
+# merged_instruct_gguf/ 
