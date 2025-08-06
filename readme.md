@@ -1,17 +1,104 @@
+# CapsWriter 离线语音输入
 
-### Windows 端
+CapsWriter 是一款免费、开源、离线的语音输入工具，旨在提供高效、保护隐私的本地语音转文字体验。
 
-```powershell
-pip install -r requirements-server.txt
-pip install -r requirements-client.txt
+## ✨ 功能特点
+
+- **本地离线运行**: 所有语音识别均在本地完成，无需联网，保护您的数据隐私。
+- **高性能识别**: 基于 Paraformer 深度学习模型，提供快速、准确的语音识别。
+- **跨平台支持**: 支持 Windows、macOS 和 Linux 系统。
+- **快捷键操作**: 默认使用 `CapsLock` 键作为快捷键，即按即说，松开即转文字，操作高效便捷。
+- **Web 界面**: 提供一个 Web 界面，可以进行实时语音转写和与本地聊天模型交互。
+- **高度可配置**:
+    - **服务端**: 可配置端口、数字格式化、标点符号引擎和中英空格调整。
+    - **客户端**: 可自定义快捷键、长按/单击模式、音频保存、热词替换等。
+- **热词与规则**: 支持中文、英文热词替换，并可自定义规则，满足个性化输入需求。
+- **Docker 支持**: 提供 Dockerfile，方便容器化部署。
+
+## 🚀 快速开始
+
+### 方式一：Windows 用户
+
+对于 Windows 用户，我们提供了预打包的可执行文件，无需安装 Python 环境。
+
+1.  下载并解压最新版本的发布包。
+2.  双击运行 `start_server.exe` 启动识别服务端。启动时会加载模型，请稍等片刻（约50秒），此过程会占用约 2GB 内存。
+3.  双击运行 `start_client.exe` 启动客户端。
+4.  按下 `CapsLock` 键开始录音，松开按键结束录音，识别结果将自动输入到当前光标位置。
+
+### 方式二：使用 Docker
+
+如果您熟悉 Docker，可以通过以下步骤来构建和运行容器。
+
+1.  **构建 Docker 镜像**:
+    ```bash
+    docker build -t capswriter .
+    ```
+
+2.  **运行 Docker 容器**:
+    ```bash
+    docker run -it --rm -p 6016:6016 -p 8000:8000 -p 8443:8443 capswriter
+    ```
+    此命令会同时启动 `core_server.py` 和 `web_server.py`。
+
+## 🛠️ 从源码运行
+
+### 1. 环境准备
+
+- 建议使用 Python 3.8 ~ 3.10 版本。部分依赖可能在 Python 3.11 及以上版本中存在兼容性问题。
+- 克隆本仓库到您的本地计算机。
+
+### 2. 安装依赖
+
+在项目根目录下，通过 pip 安装所需的依赖：
+
+```bash
+pip install -r requirements.txt
 ```
 
-有些依赖在 `Python 3.11` 还暂时不无法安装，建议使用 `Python 3.8 - Python3.10`  
+### 3. 启动程序
 
+1.  **启动服务端**:
+    ```bash
+    python core_server.py
+    ```
+    服务端会加载识别模型和标点模型，并监听在 `6016` 端口。
 
-## 源码运行
+2.  **启动客户端**:
+    ```bash
+    python core_client.py
+    ```
+    客户端会连接服务端，并开始监听快捷键。在 macOS 上可能需要 `sudo` 权限。
 
-1. 运行 `core_server.py` 脚本，会载入 Paraformer 模型识别模型和标点模型（这会占用2GB的内存，载入时长约 50 秒）
-2. 运行 `core_client.py` 脚本，它会打开系统默认麦克风，开始监听按键（`MacOS` 端需要 `sudo`）
-3. 按住 `CapsLock` 键，录音开始，松开 `CapsLock` 键，录音结束，识别结果立马被输入（录音时长短于0.3秒不算）
+## 🌐 Web 界面
+
+本项目还提供了一个 Web 界面，用于实时语音转写和与本地聊天模型进行交互。
+
+1.  **启动服务端**: 确保 `core_server.py` 正在运行。
+
+2.  **启动 Web 服务器**:
+    ```bash
+    python web_server.py
+    ```
+    此命令会启动一个 Web 服务器，并自动在您的默认浏览器中打开 `http://localhost:8000/web/index.html`。
+
+3.  **聊天功能**: Web 界面中的聊天功能依赖于一个本地运行的聊天模型 API，请确保该 API 服务在 `http://localhost:11454/api/chat` 可用。
+
+## ⚙️ 配置说明
+
+您可以通过修改 `config.py` 文件来调整程序的行为。
+
+- **`ServerConfig`**: 服务端配置，如端口、输出格式等。
+- **`ClientConfig`**: 客户端配置，如快捷键、工作模式、是否保存录音等。
+- **`ModelPaths`**: 模型文件路径配置。
+- **`ParaformerArgs`**: Paraformer 模型相关参数。
+
+## 📝 热词与规则
+
+您可以通过编辑项目根目录下的文本文件来添加自定义热词和规则：
+
+- `hot-zh.txt`: 中文热词替换。
+- `hot-en.txt`: 英文热词替换。
+- `hot-rule.txt`: 自定义规则替换。
+- `keywords.txt`: 关键词日记功能所使用的关键词。
 
