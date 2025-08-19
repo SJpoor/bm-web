@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiUrlInput = document.getElementById('modalApiUrl');
     const apiTypeSelect = document.getElementById('modalApiType');
     const modelSelectInput = document.getElementById('modalModelSelect');
+    const queryModeSelect = document.getElementById('modalQueryMode');
     const systemPromptInput = document.getElementById('modalSystemPrompt');
     const showDebugCheckbox = document.getElementById('modalShowDebug');
     const showThinkingCheckbox = document.getElementById('modalShowThinking');
@@ -38,7 +39,8 @@ document.addEventListener('DOMContentLoaded', () => {
         autoSend: true, // 固定为自动发送
         showDebug: false, // 添加调试信息显示设置
         showThinking: false, // 是否显示思考内容，默认隐藏
-        mode: 'cors', // 添加CORS模式
+        corsMode: 'cors', // CORS模式
+        queryMode: 'naive', // 查询模式：naive, local, global, hybrid, mix, bypass
         systemPrompt: "必须使用中文思考和回答，严格按照关键字进行检索并于知识库内容匹配，只能回答知识库中文档的内容，不是知识库的内容或者没用找到答案不回答", // 系统提示词
         // 检索参数固定配置（不可通过设置修改）
         topK: 50,
@@ -373,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatModelConfig.enableRerank = settings.enableRerank !== undefined ? settings.enableRerank : chatModelConfig.enableRerank;
                 chatModelConfig.showDebug = settings.showDebug !== undefined ? settings.showDebug : chatModelConfig.showDebug;
                 chatModelConfig.showThinking = settings.showThinking !== undefined ? settings.showThinking : chatModelConfig.showThinking;
+                chatModelConfig.queryMode = settings.queryMode || chatModelConfig.queryMode;
                 
                 // 加载WebSocket地址设置
                 if (settings.wsUrl) {
@@ -395,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (apiUrlInput) apiUrlInput.value = chatModelConfig.apiUrl;
                 if (apiTypeSelect) apiTypeSelect.value = chatModelConfig.apiType;
                 if (modelSelectInput) modelSelectInput.value = chatModelConfig.model;
+                if (queryModeSelect) queryModeSelect.value = chatModelConfig.queryMode;
                 if (systemPromptInput) systemPromptInput.value = chatModelConfig.systemPrompt;
                 if (showDebugCheckbox) showDebugCheckbox.checked = chatModelConfig.showDebug;
                 if (showThinkingCheckbox) showThinkingCheckbox.checked = chatModelConfig.showThinking;
@@ -410,6 +414,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (apiUrlInput) {
                 apiUrlInput.value = chatModelConfig.apiUrl;
             }
+            if (queryModeSelect) {
+                queryModeSelect.value = chatModelConfig.queryMode;
+            }
         }
         
         // 确保自动发送始终为true
@@ -421,6 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (apiUrlInput) chatModelConfig.apiUrl = apiUrlInput.value;
         if (apiTypeSelect) chatModelConfig.apiType = apiTypeSelect.value;
         if (modelSelectInput) chatModelConfig.model = modelSelectInput.value;
+        if (queryModeSelect) chatModelConfig.queryMode = queryModeSelect.value;
         if (systemPromptInput) chatModelConfig.systemPrompt = systemPromptInput.value;
         chatModelConfig.autoSend = true; // 固定为自动发送
         if (showDebugCheckbox) chatModelConfig.showDebug = showDebugCheckbox.checked;
@@ -445,6 +453,7 @@ document.addEventListener('DOMContentLoaded', () => {
             apiUrl: chatModelConfig.apiUrl,
             apiType: chatModelConfig.apiType,
             model: chatModelConfig.model,
+            queryMode: chatModelConfig.queryMode,
             systemPrompt: chatModelConfig.systemPrompt,
             showDebug: chatModelConfig.showDebug,
             showThinking: chatModelConfig.showThinking,
@@ -941,7 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 使用知识检索API格式
             const requestData = {
                 query: text,
-                mode: "naive",
+                mode: chatModelConfig.queryMode || "naive",
                 only_need_context: false,
                 only_need_prompt: false,
                 response_type: "Multiple Paragraphs",
@@ -1170,7 +1179,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // 使用知识检索API格式
             const requestData = {
                 query: text,
-                mode: "naive",
+                mode: chatModelConfig.queryMode || "naive",
                 only_need_context: false,
                 only_need_prompt: false,
                 response_type: "Multiple Paragraphs",
@@ -1506,6 +1515,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatModelConfig,
                 wsUrlInput: wsUrlInput ? wsUrlInput.value : 'null',
                 audioSampleRateSelect: audioSampleRateSelect ? audioSampleRateSelect.value : 'null',
+                queryModeSelect: queryModeSelect ? queryModeSelect.value : 'null',
                 isRecording,
                 websocketState: websocket ? websocket.readyState : 'null'
             });
@@ -1514,6 +1524,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatModelConfig,
                 websocketConnected: websocket && websocket.readyState === WebSocket.OPEN
             };
+        };
+        
+        // 添加一个全局函数用于测试查询模式
+        window.testQueryMode = function() {
+            console.log('🎯 当前查询模式:', chatModelConfig.queryMode);
+            console.log('🔧 完整配置:', chatModelConfig);
+            return chatModelConfig.queryMode;
         };
         
         // 设置输入框的值
@@ -1569,6 +1586,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (settings.model) {
                 chatModelConfig.model = settings.model;
             }
+            if (settings.queryMode) {
+                chatModelConfig.queryMode = settings.queryMode;
+                console.log('查询模式已更新为:', settings.queryMode);
+            }
             if (settings.systemPrompt !== undefined) {
                 chatModelConfig.systemPrompt = settings.systemPrompt;
             }
@@ -1581,6 +1602,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // 检索参数已固定在配置中，不再通过设置更新
             if (settings.showDebug !== undefined) {
                 chatModelConfig.showDebug = settings.showDebug;
+            }
+            if (settings.showThinking !== undefined) {
+                chatModelConfig.showThinking = settings.showThinking;
+                console.log('思考内容显示已更新为:', settings.showThinking);
             }
             
             console.log('配置已更新:', { chatModelConfig, config });

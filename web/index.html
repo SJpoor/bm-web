@@ -1437,8 +1437,10 @@
                   wsUrl: document.getElementById('modalWsUrl').value,
                   audioSampleRate: document.getElementById('modalAudioSampleRate').value,
                   model: document.getElementById('modalModelSelect')?.value || 'lightrag:latest',
+                  queryMode: document.getElementById('modalQueryMode')?.value || 'naive',
                   systemPrompt: document.getElementById('modalSystemPrompt')?.value || '',
-                  showDebug: document.getElementById('modalShowDebug')?.checked || false
+                  showDebug: document.getElementById('modalShowDebug')?.checked || false,
+                  showThinking: document.getElementById('modalShowThinking')?.checked || false
               };
             
             localStorage.setItem('voiceAssistantSettings', JSON.stringify(settings));
@@ -1480,8 +1482,10 @@
                       if (settings.wsUrl) document.getElementById('modalWsUrl').value = settings.wsUrl;
                       if (settings.audioSampleRate) document.getElementById('modalAudioSampleRate').value = settings.audioSampleRate;
                       if (settings.model) document.getElementById('modalModelSelect').value = settings.model;
+                      if (settings.queryMode) document.getElementById('modalQueryMode').value = settings.queryMode;
                       if (settings.systemPrompt !== undefined) document.getElementById('modalSystemPrompt').value = settings.systemPrompt;
                       if (settings.showDebug) document.getElementById('modalShowDebug').checked = settings.showDebug;
+                      if (settings.showThinking !== undefined) document.getElementById('modalShowThinking').checked = settings.showThinking;
                     
                     // 同步到全局变量
                     if (window.apiUrl !== undefined) window.apiUrl = settings.apiUrl;
@@ -1603,8 +1607,19 @@
                         <input type="text" id="modalModelSelect" placeholder="lightrag:latest" value="lightrag:latest">
                       </div>
                     <div class="setting-item">
+                        <label for="modalQueryMode">查询模式</label>
+                        <select id="modalQueryMode">
+                            <option value="naive">Naive - 简单查询模式</option>
+                            <option value="local">Local - 本地查询模式</option>
+                            <option value="global">Global - 全局查询模式</option>
+                            <option value="hybrid">Hybrid - 混合查询模式</option>
+                            <option value="mix">Mix - 混合模式</option>
+                            <option value="bypass">Bypass - 绕过模式</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
                         <label for="modalSystemPrompt">系统提示词</label>
-                        <textarea id="modalSystemPrompt" rows="3" placeholder="输入系统提示词，将在每次对话前发送给模型">必须使用中文思考和回答，严格按照关键字进行检索并于知识库内容匹配，只能回答知识库中文档的内容，不是知识库的内容或者没用找到答案提示“没有在知识库中找到相应内容”</textarea>
+                        <textarea id="modalSystemPrompt" rows="3" placeholder="输入系统提示词，将在每次对话前发送给模型">必须使用中文思考和回答，严格按照关键字进行检索并于知识库内容匹配，只能回答知识库中文档的内容，不是知识库的内容或者没用找到答案提示"没有在知识库中找到相应内容"</textarea>
                     </div>
                         </div>
                 
