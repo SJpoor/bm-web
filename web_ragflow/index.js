@@ -437,8 +437,7 @@ class RAGFlowChat {
                 abortBtn.style.display = 'inline-block';
             }
 
-            // 更新状态
-            this.updateStatus('正在思考中...', 'thinking');
+            // 状态已在sendMessage中设置，这里不重复设置
 
             // 构建请求体
             const requestBody = {
@@ -472,6 +471,7 @@ class RAGFlowChat {
             let thinkingElement = null;
             let isInThinkingMode = false;
             let thinkingContent = '';
+            let hasReceivedFirstResponse = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -493,6 +493,22 @@ class RAGFlowChat {
                             if (chunk.code === 0 && chunk.data) {
                                 // 处理回复内容
                                 if (chunk.data.answer) {
+                                    // 收到第一个响应时，处理思考占位符
+                                    if (!hasReceivedFirstResponse) {
+                                        hasReceivedFirstResponse = true;
+                                        // 查找思考占位符并使用它作为messageElement
+                                        const chatContainer = document.getElementById('chatContainer');
+                                        if (chatContainer) {
+                                            const thinkingPlaceholder = chatContainer.querySelector('.thinking-placeholder');
+                                            if (thinkingPlaceholder) {
+                                                messageElement = thinkingPlaceholder.closest('.message-assistant');
+                                                // 清除占位符样式和内容
+                                                thinkingPlaceholder.classList.remove('thinking-placeholder');
+                                                thinkingPlaceholder.textContent = '';
+                                            }
+                                        }
+                                    }
+                                    
                                     if (!messageElement) {
                                         messageElement = this.createAIMessage();
                                     }
@@ -501,7 +517,7 @@ class RAGFlowChat {
                                     
                                     // 实时处理思考标签
                                     const processedData = this.processStreamingThinking(aiResponse, messageElement);
-                                    if (processedData.hasThinking && this.showThinking) {
+                                    if (processedData.hasThinking) {
                                         this.updateThinkingDisplay(messageElement, processedData.thinking);
                                     }
                                     this.updateAnswerDisplay(messageElement, processedData.answer);
@@ -510,9 +526,9 @@ class RAGFlowChat {
                                 // 如果数据为true，表示流结束
                                 if (chunk.data === true) {
                                     // 更新思考标签为完成状态
-                                    if (messageElement) {
+                                    if (messageElement && this.showThinking) {
                                         const thinkingLabel = messageElement.querySelector('.thinking-label');
-                                        if (thinkingLabel && this.showThinking) {
+                                        if (thinkingLabel) {
                                             thinkingLabel.textContent = '💭 思考完成';
                                         }
                                     }
@@ -566,6 +582,17 @@ class RAGFlowChat {
         if (inputBox) {
             inputBox.textContent = '';
             inputBox.dispatchEvent(new Event('input')); // 触发placeholder更新
+        }
+
+        // 立即显示"正在思考"状态
+        this.updateStatus('正在思考中...', 'thinking');
+        
+        // 创建AI助手的思考消息
+        const thinkingMessage = this.createAIMessage();
+        const contentDiv = thinkingMessage.querySelector('.message-content');
+        if (contentDiv) {
+            contentDiv.textContent = '🤔 正在思考中，请稍候...';
+            contentDiv.classList.add('thinking-placeholder');
         }
 
         // 发送到RAGFlow
@@ -711,14 +738,20 @@ class RAGFlowChat {
 
     // 更新思考内容显示
     updateThinkingDisplay(messageElement, thinkingContent) {
-        if (!messageElement || !thinkingContent || !this.showThinking) return;
+        if (!messageElement || !thinkingContent) return;
         
         const thinkingContainer = messageElement.querySelector('.thinking-container');
         const thinkingContentDiv = messageElement.querySelector('.thinking-content');
         
         if (thinkingContainer && thinkingContentDiv) {
-            thinkingContainer.style.display = 'block';
-            thinkingContentDiv.textContent = thinkingContent;
+            if (this.showThinking) {
+                // 开关打开时显示思考内容
+                thinkingContainer.style.display = 'block';
+                thinkingContentDiv.textContent = thinkingContent;
+            } else {
+                // 开关关闭时隐藏思考内容
+                thinkingContainer.style.display = 'none';
+            }
             
             // 自动滚动到底部
             const chatContainer = document.getElementById('chatContainer');
@@ -1001,7 +1034,7 @@ class RAGFlowChat {
                             
                             // 语音识别完成后自动发送到聊天模型
                             setTimeout(() => {
-                                this.sendMessage(recognizedText);
+                                this.sendMessage();
                             }, 500);
                             
                             this.updateStatus(`识别完成，用时：${(message.time_complete - message.time_submit).toFixed(2)}秒`, 'ready');
