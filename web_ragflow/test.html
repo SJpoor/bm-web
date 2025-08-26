@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAGFlow 嵌入页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+        }
+
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            border: none;
+            background: #fff;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .iframe-container {
+                margin: 10px;
+            }
+            
+            .header {
+                padding: 12px;
+                font-size: 16px;
+            }
+        }
+
+        /* 全屏模式按钮 */
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="fullscreen-btn" onclick="toggleFullscreen()">全屏</button>
+            RAGFlow 对话系统
+        </div>
+        
+        <div class="iframe-container">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <div>正在加载对话系统...</div>
+                <div style="font-size: 14px; color: #999;">请确保网络连接正常</div>
+            </div>
+            
+            <iframe 
+                id="ragflow-iframe"
+                src="https://192.168.40.83/next-chats/share?shared_id=b446dfd4815011f087210242ac130006&from=chat&auth=JiOWYzOTcyODE1MjExZjA5ZWIxMDI0Mm&locale=zh"
+                style="width: 100%; height: 100%; min-height: 600px; border: none; display: none;"
+                frameborder="0"
+                allow="fullscreen"
+                onload="hideLoading()"
+                referrerpolicy="no-referrer">
+                您的浏览器不支持 iframe 或无法连接到目标服务。
+            </iframe>
+            
+            <div id="error-message" class="error-message" style="display: none;">
+                <h3>连接失败</h3>
+                <p>无法加载 RAGFlow 服务，可能原因：</p>
+                <ul style="text-align: left; margin: 15px 20px;">
+                    <li>网络连接问题</li>
+                    <li>目标服务未运行</li>
+                    <li>HTTPS 证书不受信任</li>
+                    <li>跨域访问被阻止</li>
+                </ul>
+                <p>请检查：<br>
+                   - 确保 192.168.40.83 可访问<br>
+                   - 尝试在新标签页直接打开链接
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 控制加载状态
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('ragflow-iframe').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        // 处理加载错误
+        const iframe = document.getElementById('ragflow-iframe');
+        
+        iframe.onerror = function() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('ragflow-iframe').style.display = 'none';
+            document.getElementById('error-message').style.display = 'block';
+        };
+
+        // 设置超时，防止无限加载
+        setTimeout(() => {
+            const loading = document.getElementById('loading');
+            if (loading && loading.style.display !== 'none') {
+                loading.querySelector('.spinner').style.display = 'none';
+                loading.innerHTML = '<div>加载超时</div><div style="font-size: 14px;">请检查网络连接或服务状态</div>';
+            }
+        }, 10000); // 10秒超时
+
+        // 全屏功能
+        function toggleFullscreen() {
+            const container = document.querySelector('.container');
+            if (!document.fullscreenElement) {
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                } else if (container.mozRequestFullScreen) {
+                    container.mozRequestFullScreen();
+                } else if (container.webkitRequestFullscreen) {
+                    container.webkitRequestFullscreen();
+                } else if (container.msRequestFullscreen) {
+                    container.msRequestFullscreen();
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+        }
+
+        // 监听全屏变化
+        document.addEventListener('fullscreenchange', updateFullscreenButton);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+        document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+        document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+
+        function updateFullscreenButton() {
+            const btn = document.querySelector('.fullscreen-btn');
+            if (document.fullscreenElement) {
+                btn.textContent = '退出全屏';
+            } else {
+                btn.textContent = '全屏';
+            }
+        }
+
+        // 页面可见性变化时重新加载（可选）
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                // 页面回到前台，可以考虑重新验证连接
+                console.log('页面可见性变化');
+            }
+        });
+    </script>
+</body>
+</html>
