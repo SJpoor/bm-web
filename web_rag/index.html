@@ -1510,7 +1510,7 @@
         
         <div class="main-content">
             <div class="chat-header">
-                <div class="chat-title">智能语音助手</div>
+                <div class="chat-title">JYBM业务办理指南</div>
                 <div class="chat-actions">
                     <div class="status-indicator" id="status">
                         准备就绪
@@ -1624,9 +1624,9 @@
                 const savedSettings = localStorage.getItem('ragflow_voice_assistant_settings');
                 if (savedSettings) {
                     const settings = JSON.parse(savedSettings);
-                    document.getElementById('modalApiUrl').value = settings.apiUrl || `https://192.168.40.83`;
-                    document.getElementById('modalApiKey').value = settings.apiKey || 'ragflow-JiOWYyZTE0ODE1MjExZjA5ZWIxMDI0Mm';
-                    document.getElementById('modalChatId').value = settings.chatId || 'b446dfd4815011f087210242ac130006';
+                    document.getElementById('modalApiUrl').value = settings.apiUrl || `https://${window.location.hostname}`;
+                    document.getElementById('modalApiKey').value = settings.apiKey || 'ragflow-kyZDJiZDRhODIyODExZjA4NzU0MDI0Mm';
+                    document.getElementById('modalChatId').value = settings.chatId || '9db7c85c824d11f0b33a0242ac130006';
                     document.getElementById('modalWsUrl').value = settings.wsUrl || `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:6016`;
                     document.getElementById('modalAudioSampleRate').value = settings.audioSampleRate || '16000';
 
@@ -1638,9 +1638,9 @@
                     }
                 } else {
                     // 设置默认值
-                    document.getElementById('modalApiUrl').value = `https://192.168.40.83`;
-                    document.getElementById('modalApiKey').value = 'ragflow-JiOWYyZTE0ODE1MjExZjA5ZWIxMDI0Mm';
-                    document.getElementById('modalChatId').value = 'b446dfd4815011f087210242ac130006';
+                    document.getElementById('modalApiUrl').value = `https://${window.location.hostname}`;
+                    document.getElementById('modalApiKey').value = 'ragflow-kyZDJiZDRhODIyODExZjA4NzU0MDI0Mm';
+                    document.getElementById('modalChatId').value = '9db7c85c824d11f0b33a0242ac130006';
                     document.getElementById('modalWsUrl').value = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:6016`;
                     document.getElementById('modalAudioSampleRate').value = '16000';
 
@@ -1654,9 +1654,9 @@
             } catch (error) {
                 console.error('加载设置失败:', error);
                 // 设置默认值
-                document.getElementById('modalApiUrl').value = `https://192.168.40.83`;
-                document.getElementById('modalApiKey').value = 'ragflow-JiOWYyZTE0ODE1MjExZjA5ZWIxMDI0Mm';
-                document.getElementById('modalChatId').value = 'b446dfd4815011f087210242ac130006';
+                document.getElementById('modalApiUrl').value = `https://${window.location.hostname}`;
+                document.getElementById('modalApiKey').value = 'ragflow-kyZDJiZDRhODIyODExZjA4NzU0MDI0Mm';
+                document.getElementById('modalChatId').value = '9db7c85c824d11f0b33a0242ac130006';
                 document.getElementById('modalWsUrl').value = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:6016`;
                 document.getElementById('modalAudioSampleRate').value = '16000';
 
@@ -1667,6 +1667,9 @@
                     document.getElementById('modalShowThinking').checked = false;
                 }
             }
+            
+            // 动态设置placeholder
+            document.getElementById('modalApiUrl').placeholder = `https://${window.location.hostname}`;
             
             modal.classList.add('show');
         }
@@ -1846,17 +1849,17 @@
                 <div class="modal-body">
                 <div class="setting-group">
                     <h3>聊天模型设置</h3>
-                                        <div class="setting-item">
+                        <div class="setting-item">
                         <label for="modalApiUrl">API地址</label>
-                        <input type="text" id="modalApiUrl" placeholder="https://192.168.40.83" value="https://192.168.40.83">
+                        <input type="text" id="modalApiUrl" placeholder="" value="">
                         </div>
-                    <div class="setting-item">
+                    <div class="setting-item" >
                         <label for="modalApiKey">API Key</label>
-                        <input type="text" id="modalApiKey" placeholder="输入RAGFlow API鉴权密钥" value="ragflow-JiOWYyZTE0ODE1MjExZjA5ZWIxMDI0Mm">
+                        <input type="text" id="modalApiKey" placeholder="输入RAGFlow API鉴权密钥" value="ragflow-kyZDJiZDRhODIyODExZjA4NzU0MDI0Mm">
                         </div>
-                    <div class="setting-item">
+                    <div class="setting-item" >
                         <label for="modalChatId">聊天ID</label>
-                        <input type="text" id="modalChatId" placeholder="b446dfd4815011f087210242ac130006" value="b446dfd4815011f087210242ac130006">
+                        <input type="text" id="modalChatId" placeholder="9db7c85c824d11f0b33a0242ac130006" value="9db7c85c824d11f0b33a0242ac130006">
                         </div>
                 </div>
                 

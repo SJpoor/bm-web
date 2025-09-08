@@ -3,9 +3,9 @@
 
 class RAGFlowChat {
     constructor() {
-        this.apiUrl = 'https://192.168.40.83';
-        this.apiKey = 'ragflow-JiOWYyZTE0ODE1MjExZjA5ZWIxMDI0Mm';
-        this.chatId = 'b446dfd4815011f087210242ac130006';
+        this.apiUrl = `https://${window.location.hostname}`;
+        this.apiKey = 'ragflow-kyZDJiZDRhODIyODExZjA4NzU0MDI0Mm';
+        this.chatId = '9db7c85c824d11f0b33a0242ac130006';
         this.sessionId = null; // 当前会话ID
         this.isStreaming = false;
         this.abortController = null;
@@ -587,7 +587,7 @@ class RAGFlowChat {
         // 立即显示"正在思考"状态
         this.updateStatus('正在思考中...', 'thinking');
         
-        // 创建AI助手的思考消息
+        // 创建知识库的思考消息
         const thinkingMessage = this.createAIMessage();
         const contentDiv = thinkingMessage.querySelector('.message-content');
         if (contentDiv) {
@@ -620,7 +620,7 @@ class RAGFlowChat {
         
         const roleNames = {
             'user': '用户',
-            'assistant': 'AI助手',
+            'assistant': '知识库',
             'system': '系统',
             'error': '错误'
         };
@@ -656,7 +656,7 @@ class RAGFlowChat {
 
         const metaDiv = document.createElement('div');
         metaDiv.className = 'message-meta';
-        metaDiv.textContent = 'AI助手';
+        metaDiv.textContent = '知识库';
 
         // 创建思考容器
         const thinkingDiv = document.createElement('div');
